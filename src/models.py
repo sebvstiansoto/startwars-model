@@ -1,19 +1,53 @@
-from flask_sqlalchemy import SQLAlchemy
+import os
+import sys
+from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy import create_engine
+from eralchemy2 import render_er
 
-db = SQLAlchemy()
+Base = declarative_base()
 
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(80), unique=False, nullable=False)
-    is_active = db.Column(db.Boolean(), unique=False, nullable=False)
 
-    def __repr__(self):
-        return '<User %r>' % self.username
+class Usuario(Base):
+    __tablename__ = 'usuario'
+    id = Column(Integer, primary_key=True)
+    email = Column(String(250), nullable=False, unique=True)
+    password = Column(String(250), nullable=False)
+    fecha_subscripcion = Column(String(250))
+    nombre = Column(String(250))
+    apellido = Column(String(250))
 
-    def serialize(self):
-        return {
-            "id": self.id,
-            "email": self.email,
-            # do not serialize the password, its a security breach
-        }
+    favoritos = relationship("Favorito", back_populates="usuario")
+
+class Planeta(Base):
+    __tablename__ = 'planeta'
+    id = Column(Integer, primary_key=True)
+    nombre = Column(String(250), nullable=False)
+    clima = Column(String(250))
+    terreno = Column(String(250))
+
+    favoritos = relationship("Favorito", back_populates="planeta")
+
+class Personaje(Base):
+    __tablename__ = 'personaje'
+    id = Column(Integer, primary_key=True)
+    nombre = Column(String(250), nullable=False)
+    especie = Column(String(250))
+    planeta_id = Column(Integer, ForeignKey('planeta.id'))
+    planeta = relationship("Planeta")
+
+    favoritos = relationship("Favorito", back_populates="personaje")
+
+class Favorito(Base):
+    __tablename__ = 'favorito'
+    id = Column(Integer, primary_key=True)
+    usuario_id = Column(Integer, ForeignKey('usuario.id'))
+    planeta_id = Column(Integer, ForeignKey('planeta.id'), nullable=True)
+    personaje_id = Column(Integer, ForeignKey('personaje.id'), nullable=True)
+
+    usuario = relationship("Usuario", back_populates="favoritos")
+    planeta = relationship("Planeta", back_populates="favoritos")
+    personaje = relationship("Personaje", back_populates="favoritos")
+
+
+render_er(Base, 'diagram.png')
